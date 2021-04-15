@@ -105,6 +105,9 @@ public class WebLayerTests {
                 new Contact(null, 100L, "Mikhail", new PhoneNumber("123-567-890")), HttpStatus.NOT_FOUND, null));
         assertTrue(requestAndCheck(HttpMethod.POST, "/contacts",
                 new Contact(null, 0L, "Mikhail", new PhoneNumber("123-567-890")), HttpStatus.NOT_FOUND, null));
+        // Deleting a user with contacts.
+        assertTrue(requestAndCheck(HttpMethod.DELETE, "/users/1", null, HttpStatus.OK, null));
+        assertTrue(requestAndCheck(HttpMethod.GET, "contacts/4", null, HttpStatus.NOT_FOUND, null));
 
         // Getting contacts.
         // Get all.
@@ -113,7 +116,7 @@ public class WebLayerTests {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.OK)
                 .expectBody(ContactListWrapper.class).returnResult().getResponseBody().getContacts()
-                .size(), 4);
+                .size(), 2);
         // Get by id.
         assertTrue(requestAndCheck(HttpMethod.GET, "/contacts/2", null, HttpStatus.OK,
                 new Contact(2L, 3L, "Dimitri", new PhoneNumber("987 654 321"))));

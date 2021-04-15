@@ -72,10 +72,6 @@ public class ContactsRepository {
     public boolean remove(long id) { return contacts.remove(id) != null; }
 
     public void removeAllUserContacts(long id) {
-        for (Map.Entry<Long, Contact> entry : contacts.entrySet()) {
-            if (entry.getValue().getUserId() == id) {
-                contacts.remove(entry.getKey());
-            }
-        }
+        contacts.values().removeIf(v -> v.getUserId().equals(id));
     }
 }
