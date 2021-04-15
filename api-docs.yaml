@@ -1,0 +1,351 @@
+openapi: 3.0.1
+info:
+  title: contact-list-server
+  version: v1
+servers:
+- url: http://localhost:8080
+paths:
+  /users/:
+    get:
+      tags:
+      - User
+      operationId: getAllUsers
+      summary: "Get a list of all users"
+      responses:
+        "200":
+          description: "Returns a list with users or an empty list"
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserListWrapper'
+  /users:
+    get:
+      tags:
+      - User
+      operationId: searchInName
+      summary: "Get all users whose names contain the substring"
+      parameters:
+      - name: "substring"
+        description: "Case is ignored."
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: "Returns a list with users or an empty list"
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserListWrapper'
+    post:
+      tags:
+      - User
+      operationId: addUser
+      summary: "Add new user"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Name:
+                  type: string
+                  example: "Bob"
+        required: true
+      responses:
+        "400":
+          description: "Wrong body format or the name is empty"
+        "200":
+          description: "Returns ID of the added user"
+          content:
+            'application/json':
+              schema:
+                type: integer
+                format: int64
+                example: 152
+  /users/{userId}:
+    get:
+      tags:
+      - User
+      operationId: getUser
+      summary: "Get user with matching ID"   
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: "User Not Found"
+        "200":
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      tags:
+      - User
+      operationId: removeUser
+      summary: "Delete user with matching ID"
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: "User Not Found"
+        "200":
+          description: "User successfully removed"
+    patch:
+      tags:
+      - User
+      operationId: changeUser
+      summary: "Update user information"
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Name:
+                  type: string
+                  example: "Robert"
+        required: true
+      responses:
+        "400":
+          description: "Wrong body format or the name is empty"
+        "404":
+          description: "User Not Found"
+        "200":
+          description: "User successfully updated"
+  /contacts:
+    get:
+      tags:
+      - Contact
+      operationId: getAllContacts
+      summary: "Get all contacts"
+      responses:
+        "200":
+          description: "Returns a list of all saved contacts"
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ContactListWrapper'
+    post:
+      tags:
+      - Contact
+      operationId: addContact
+      summary: "Add a new contact"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                UserId:
+                  type: integer
+                  format: int64
+                  example: 4
+                Name:
+                  type: string
+                  example: "Mary"
+                PhoneNumber:
+                  $ref: '#/components/schemas/PhoneNumber'
+        required: true
+      responses:
+        "400":
+          description: "Wrong format or some of the fields are empty"
+        "404":
+          description: "User With Specified ID Not Found"
+        "200":
+          description: "ID of the added contact"
+          content:
+            'application/json':
+              schema:
+                type: integer
+                format: int64
+                example: 2
+  /contacts/{contactId}:
+    get:
+      tags:
+      - Contact
+      operationId: getContact
+      summary: "Get contact with matching ID"
+      parameters:
+      - name: contactId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: "Contact Not Found"
+        "200":
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Contact'
+    delete:
+      tags:
+      - Contact
+      operationId: removeContact
+      summary: "Remove contact with matching ID"
+      parameters:
+      - name: contactId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: "Contact Not Found"
+        "200":
+          description: OK
+    patch:
+      tags:
+      - Contact
+      operationId: changeContact
+      summary: "Update fields of contact with matching ID"
+      parameters:
+      - name: contactId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: "One of the properties can be absent, but not both of them"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Name:
+                  type: string
+                  example: "Alex"
+                PhoneNumber:
+                  $ref: '#/components/schemas/PhoneNumber'
+        required: true
+      responses:
+        "400":
+          description: "Wrong format or both properties are null"
+        "404":
+          description: "Contact Not Found"
+        "200":
+          description: OK
+  /users/{userId}/contacts/:
+    get:
+      tags:
+      - Contact
+      operationId: getAllUserContacts
+      summary: "Get all contacts of a user"
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: "User Not Found"
+        "200":
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ContactListWrapper'
+  /users/{userId}/contacts:
+    get:
+      tags:
+      - Contact
+      operationId: searchByPhoneNumber
+      summary: "Get all contacts of a user with specified phone number"
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: phoneNumber
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "400":
+          description: "Wrong format or the string contains no digits"
+        "404":
+          description: "User Not Found"
+        "200":
+          description: "A list of contacts (can be empty)"
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ContactListWrapper'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        Id:
+          type: integer
+          format: int64
+          example: 151
+        Name:
+          type: string
+          example: "Peter"
+    Contact:
+      type: object
+      properties:
+        ContactId:
+          type: integer
+          format: int64
+          example: 15
+        UserId:
+          type: integer
+          format: int64
+          example: 151
+        Name:
+          type: string
+          example: "Mary"
+        PhoneNumber:
+          $ref: '#/components/schemas/PhoneNumber'
+    PhoneNumber:
+      type: object
+      properties:
+        Number:
+          type: string
+          example: "111-222-333"
+    UserListWrapper:
+      type: object
+      properties:
+        Users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    ContactListWrapper:
+      type: object
+      properties:
+        Contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
