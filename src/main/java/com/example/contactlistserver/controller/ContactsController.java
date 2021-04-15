@@ -1,78 +1,70 @@
 package com.example.contactlistserver.controller;
 
+import com.example.contactlistserver.wrapper.ContactListWrapper;
+import com.example.contactlistserver.exception.ContactNotFoundException;
+import com.example.contactlistserver.exception.IllegalRequestException;
 import com.example.contactlistserver.model.Contact;
-import com.example.contactlistserver.model.ContactsRepository;
-import com.example.contactlistserver.model.User;
-import com.example.contactlistserver.model.UsersRepository;
+import com.example.contactlistserver.repository.ContactsRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 public class ContactsController {
 
     @Autowired
-    private UsersRepository users;
-    @Autowired
     private ContactsRepository contacts;
 
     @GetMapping("/contacts")
-    public List<Contact> getAllContacts() {
-        return contacts.getAll();
+    public ResponseEntity<ContactListWrapper> getAllContacts() {
+        return ResponseEntity.ok(new ContactListWrapper(contacts.getAll()));
     }
 
     @GetMapping("/contacts/{id}")
-    public ResponseEntity<Contact> getContact(@PathVariable("id") int id) {
-        Contact contact = contacts.get(id);
-        if (contact == null)
-            return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(contact);
+    public ResponseEntity<Contact> getContact(@PathVariable("id") long id) {
+        return ResponseEntity.ok(contacts.get(id));
     }
 
     @GetMapping("/users/{userId}/contacts")
-    public List<Contact> getAllUserContacts(@PathVariable("userId") int userId) {
-        return contacts.getAllUserContacts(userId);
+    public ResponseEntity<ContactListWrapper> getAllUserContacts(@PathVariable("userId") long userId) {
+        return ResponseEntity.ok(new ContactListWrapper(contacts.getAllUserContacts(userId)));
     }
 
     @GetMapping(value = "/users/{userId}/contacts", params = "phoneNumber")
-    public List<Contact> searchByPhoneNumber(@PathVariable("userId") int userId,
-                                             @RequestParam("phoneNumber") String phoneNumber) {
-        return contacts.searchByPhoneNumber(userId, phoneNumber);
+    public ResponseEntity<ContactListWrapper> searchByPhoneNumber(@PathVariable("userId") long userId,
+                                                                  @RequestParam("phoneNumber") String phoneNumber) {
+        return ResponseEntity.ok(new ContactListWrapper(contacts.searchByPhoneNumber(userId, phoneNumber)));
     }
 
-    @PostMapping("/users/{userId}/contacts")
-    public ResponseEntity<?> addUserContact(@PathVariable("userId") int userId,
-                                            @RequestParam("name") String name,
-                                            @RequestParam("phoneNumber") String phoneNumber) {
-        if (users.get(userId) == null)
-            return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(contacts.add(userId, name, phoneNumber));
+    @PostMapping("/contacts")
+    public ResponseEntity<Long> addContact(@RequestBody Contact contact) {
+        if (contact.getContactId() != null
+                || contact.getUserId() == null
+                || contact.getName() == null || contact.getName().isEmpty()
+                || contact.getPhoneNumber() == null) {
+            throw new IllegalRequestException();
+        }
+        return ResponseEntity.ok(contacts.add(contact));
     }
 
     @PatchMapping("/contacts/{id}")
-    public ResponseEntity<?> changeContact(@PathVariable("id") int id,
-                                           @RequestParam(name = "name", required = false) String name,
-                                           @RequestParam(name = "phoneNumber", required = false) String phoneNumber) {
-        if (users.get(id) == null)
-            return ResponseEntity.notFound().build();
-        if (name == null && phoneNumber == null) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<?> changeContact(@PathVariable("id") long id,
+                                           @RequestBody Contact contact) {
+        if (contact.getContactId() != null
+                || contact.getUserId() != null
+                || (contact.getName() == null || contact.getName() == "") && contact.getPhoneNumber() == null) {
+            throw new IllegalRequestException();
         }
-
-        Contact c = contacts.get(id);
-        if (name != null) { c.setName(name); }
-        if (phoneNumber != null) { c.setPhoneNumber(phoneNumber); }
+        contacts.updateContact(id, contact);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/contacts/{id}")
-    public ResponseEntity<?> removeContact(@PathVariable("id") int id) {
-        if (contacts.remove(id)) {
-            return ResponseEntity.ok().build();
+    public ResponseEntity<?> removeContact(@PathVariable("id") long id) {
+        if (!contacts.remove(id)) {
+            throw new ContactNotFoundException();
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok().build();
     }
 }
